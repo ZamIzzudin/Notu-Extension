@@ -138,8 +138,12 @@ class ApiService {
   }
 
   // Notes
-  async getNotes() {
-    return this.request('/notes');
+  async getNotes(filter = {}) {
+    const params = new URLSearchParams();
+    if (filter.archived) params.append('archived', 'true');
+    if (filter.deleted) params.append('deleted', 'true');
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request(`/notes${query}`);
   }
 
   async getNote(id) {
@@ -160,8 +164,21 @@ class ApiService {
     });
   }
 
-  async deleteNote(id) {
-    return this.request(`/notes/${id}`, {
+  async deleteNote(id, permanent = false) {
+    const query = permanent ? '?permanent=true' : '';
+    return this.request(`/notes/${id}${query}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async restoreNote(id) {
+    return this.request(`/notes/${id}/restore`, {
+      method: 'POST',
+    });
+  }
+
+  async emptyTrash() {
+    return this.request('/notes/trash/empty', {
       method: 'DELETE',
     });
   }

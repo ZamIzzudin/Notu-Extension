@@ -52,6 +52,30 @@ export const translations = {
 
     // Download
     download: "Unduh",
+
+    // New Features
+    pin: "Sematkan",
+    unpin: "Lepas Sematan",
+    pinned: "Disematkan",
+    archive: "Arsipkan",
+    unarchive: "Batalkan Arsip",
+    archived: "Diarsipkan",
+    trash: "Sampah",
+    restore: "Pulihkan",
+    deletePermanently: "Hapus Permanen",
+    emptyTrash: "Kosongkan Sampah",
+    emptyTrashConfirmation: "Apakah kamu yakin ingin mengosongkan sampah? Semua catatan akan dihapus permanen.",
+    noArchivedNotes: "Tidak ada catatan diarsipkan",
+    noTrashedNotes: "Sampah kosong",
+    sortBy: "Urutkan",
+    sortByDate: "Tanggal",
+    sortByTitle: "Judul",
+    sortByColor: "Warna",
+    allNotes: "Semua Catatan",
+    darkMode: "Mode Gelap",
+    lightMode: "Mode Terang",
+    moveToTrash: "Pindahkan ke Sampah",
+    restoreFailed: "Gagal memulihkan",
   },
   en: {
     // Login Page
@@ -104,6 +128,30 @@ export const translations = {
 
     // Download
     download: "Download",
+
+    // New Features
+    pin: "Pin",
+    unpin: "Unpin",
+    pinned: "Pinned",
+    archive: "Archive",
+    unarchive: "Unarchive",
+    archived: "Archived",
+    trash: "Trash",
+    restore: "Restore",
+    deletePermanently: "Delete Permanently",
+    emptyTrash: "Empty Trash",
+    emptyTrashConfirmation: "Are you sure you want to empty the trash? All notes will be permanently deleted.",
+    noArchivedNotes: "No archived notes",
+    noTrashedNotes: "Trash is empty",
+    sortBy: "Sort by",
+    sortByDate: "Date",
+    sortByTitle: "Title",
+    sortByColor: "Color",
+    allNotes: "All Notes",
+    darkMode: "Dark Mode",
+    lightMode: "Light Mode",
+    moveToTrash: "Move to Trash",
+    restoreFailed: "Failed to restore",
   },
 };
 
