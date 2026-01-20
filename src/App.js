@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, CloudOff } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User } from 'lucide-react';
 import apiService from './services/api';
+import LoginPage from './components/LoginPage';
 
-const SYNC_ENABLED = process.env.REACT_APP_API_URL ? true : false;
-
-export default function NotesManager() {
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [notes, setNotes] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
@@ -16,9 +18,9 @@ export default function NotesManager() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [isOnline, setIsOnline] = useState(SYNC_ENABLED);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const colors = [
     '#FFFFFF',
@@ -30,9 +32,35 @@ export default function NotesManager() {
     '#E0E7FF',
   ];
 
-  // Sync notes from server
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (apiService.isAuthenticated()) {
+        try {
+          const userData = await apiService.getMe();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          setIsAuthenticated(false);
+        }
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+
+    const handleLogout = () => {
+      setIsAuthenticated(false);
+      setUser(null);
+      setNotes([]);
+    };
+
+    window.addEventListener('auth-logout', handleLogout);
+    return () => window.removeEventListener('auth-logout', handleLogout);
+  }, []);
+
   const syncFromServer = useCallback(async () => {
-    if (!SYNC_ENABLED) return;
+    if (!isAuthenticated) return;
     
     setIsSyncing(true);
     setSyncError(null);
@@ -47,40 +75,38 @@ export default function NotesManager() {
         date: note.date,
       }));
       setNotes(formattedNotes);
-      localStorage.setItem('notes', JSON.stringify(formattedNotes));
-      setIsOnline(true);
     } catch (error) {
       console.error('Sync error:', error);
       setSyncError('Failed to sync');
-      setIsOnline(false);
-      // Fallback to local storage
-      const savedNotes = localStorage.getItem('notes');
-      if (savedNotes) {
-        setNotes(JSON.parse(savedNotes));
-      }
     } finally {
       setIsSyncing(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
-  // Load notes on mount
   useEffect(() => {
-    if (SYNC_ENABLED) {
+    if (isAuthenticated) {
       syncFromServer();
-    } else {
-      const savedNotes = localStorage.getItem('notes');
-      if (savedNotes) {
-        setNotes(JSON.parse(savedNotes));
-      }
     }
-  }, [syncFromServer]);
+  }, [isAuthenticated, syncFromServer]);
 
-  // Save notes to local storage
-  useEffect(() => {
-    if (!SYNC_ENABLED && (notes.length > 0 || notes.length === 0)) {
-      localStorage.setItem('notes', JSON.stringify(notes));
+  const handleLogin = async (formData, isLoginMode) => {
+    if (isLoginMode) {
+      const data = await apiService.login(formData.email, formData.password);
+      setUser(data.user);
+    } else {
+      const data = await apiService.register(formData.name, formData.email, formData.password);
+      setUser(data.user);
     }
-  }, [notes]);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    await apiService.logout();
+    setIsAuthenticated(false);
+    setUser(null);
+    setNotes([]);
+    setShowUserMenu(false);
+  };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -122,57 +148,32 @@ export default function NotesManager() {
         images: formData.images,
       };
 
-      if (SYNC_ENABLED && isOnline) {
-        setIsSyncing(true);
-        try {
-          if (editingNote) {
-            const updated = await apiService.updateNote(editingNote.id, noteData);
-            setNotes(notes.map((note) =>
-              note.id === editingNote.id
-                ? { ...note, ...noteData, id: updated._id, date: updated.date, images: updated.images }
-                : note
-            ));
-          } else {
-            const created = await apiService.createNote(noteData);
-            const newNote = {
-              id: created._id,
-              ...noteData,
-              images: created.images,
-              date: created.date,
-            };
-            setNotes([newNote, ...notes]);
-          }
-        } catch (error) {
-          console.error('Save error:', error);
-          setSyncError('Failed to save');
-          // Fallback to local
-          saveLocally(noteData);
-        } finally {
-          setIsSyncing(false);
+      setIsSyncing(true);
+      try {
+        if (editingNote) {
+          const updated = await apiService.updateNote(editingNote.id, noteData);
+          setNotes(notes.map((note) =>
+            note.id === editingNote.id
+              ? { ...note, ...noteData, id: updated._id, date: updated.date, images: updated.images }
+              : note
+          ));
+        } else {
+          const created = await apiService.createNote(noteData);
+          const newNote = {
+            id: created._id,
+            ...noteData,
+            images: created.images,
+            date: created.date,
+          };
+          setNotes([newNote, ...notes]);
         }
-      } else {
-        saveLocally(noteData);
+      } catch (error) {
+        console.error('Save error:', error);
+        setSyncError('Failed to save');
+      } finally {
+        setIsSyncing(false);
       }
       handleCancel();
-    }
-  };
-
-  const saveLocally = (noteData) => {
-    if (editingNote) {
-      setNotes(
-        notes.map((note) =>
-          note.id === editingNote.id
-            ? { ...note, ...noteData, date: new Date().toISOString() }
-            : note
-        )
-      );
-    } else {
-      const newNote = {
-        id: Date.now(),
-        ...noteData,
-        date: new Date().toISOString(),
-      };
-      setNotes([newNote, ...notes]);
     }
   };
 
@@ -188,19 +189,15 @@ export default function NotesManager() {
   };
 
   const handleDelete = async (id) => {
-    if (SYNC_ENABLED && isOnline) {
-      setIsSyncing(true);
-      try {
-        await apiService.deleteNote(id);
-        setNotes(notes.filter((note) => note.id !== id));
-      } catch (error) {
-        console.error('Delete error:', error);
-        setSyncError('Failed to delete');
-      } finally {
-        setIsSyncing(false);
-      }
-    } else {
+    setIsSyncing(true);
+    try {
+      await apiService.deleteNote(id);
       setNotes(notes.filter((note) => note.id !== id));
+    } catch (error) {
+      console.error('Delete error:', error);
+      setSyncError('Failed to delete');
+    } finally {
+      setIsSyncing(false);
     }
     setDeleteConfirm(null);
   };
@@ -235,6 +232,21 @@ export default function NotesManager() {
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isCheckingAuth) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw size={32} className="text-purple-500 animate-spin" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   if (isAdding) {
     return (
@@ -366,20 +378,45 @@ export default function NotesManager() {
           >
             Notu
           </h1>
-          <div className="flex items-center gap-2">
-            {SYNC_ENABLED && (
-              <>
-                {isSyncing ? (
-                  <RefreshCw size={20} className="text-gray-500 animate-spin" />
-                ) : isOnline ? (
-                  <button onClick={syncFromServer} className="p-1">
-                    <Cloud size={20} className="text-green-500" />
-                  </button>
-                ) : (
-                  <CloudOff size={20} className="text-gray-400" />
-                )}
-              </>
+          <div className="flex items-center gap-3">
+            {isSyncing ? (
+              <RefreshCw size={20} className="text-gray-500 animate-spin" />
+            ) : (
+              <button onClick={syncFromServer} className="p-1">
+                <Cloud size={20} className="text-green-500" />
+              </button>
             )}
+            
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-md hover:shadow-lg transition-shadow"
+              >
+                {user?.name?.charAt(0).toUpperCase() || <User size={18} />}
+              </button>
+              
+              {showUserMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className="absolute right-0 top-12 bg-white rounded-xl shadow-xl border border-gray-100 py-2 w-56 z-20">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="font-medium text-gray-800">{user?.name}</p>
+                      <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    >
+                      <LogOut size={18} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
