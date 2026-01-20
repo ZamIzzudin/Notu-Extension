@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe, Download } from 'lucide-react';
 import apiService from './services/api';
 import LoginPage from './components/LoginPage';
 import { useLanguage } from './i18n/LanguageContext';
@@ -137,6 +137,15 @@ export default function App() {
     }));
   };
 
+  const downloadImage = (imageUrl, imageName) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = imageName || `image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSave = async () => {
     if (
       formData.title.trim() ||
@@ -239,7 +248,7 @@ export default function App() {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw size={32} className="text-purple-500 animate-spin" />
+          <RefreshCw size={32} className="text-gray-900 animate-spin" />
           <p className="text-gray-500">{t('loading')}</p>
         </div>
       </div>
@@ -346,12 +355,20 @@ export default function App() {
                     alt="attachment"
                     className="w-full h-32 object-cover rounded-lg border-2 border-gray-300"
                   />
-                  <button
-                    onClick={() => removeImage(image.id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={16} />
-                  </button>
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => downloadImage(image.url, `image-${image.id}`)}
+                      className="bg-blue-500 text-white rounded-full p-1"
+                    >
+                      <Download size={16} />
+                    </button>
+                    <button
+                      onClick={() => removeImage(image.id)}
+                      className="bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -385,14 +402,14 @@ export default function App() {
               <RefreshCw size={20} className="text-gray-500 animate-spin" />
             ) : (
               <button onClick={syncFromServer} className="p-1">
-                <Cloud size={20} className="text-green-500" />
+                <Cloud size={20} className="text-gray-900" />
               </button>
             )}
             
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-md hover:shadow-lg transition-shadow"
+                className="w-9 h-9 bg-gray-900 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-md hover:shadow-lg transition-shadow"
               >
                 {user?.name?.charAt(0).toUpperCase() || <User size={18} />}
               </button>
@@ -493,6 +510,15 @@ export default function App() {
                           alt="attachment"
                           className="w-full h-48 object-cover rounded-lg border-2 border-gray-300"
                         />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadImage(image.url, `image-${image.id}`);
+                          }}
+                          className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Download size={16} />
+                        </button>
                       </div>
                     ))}
                     {note.images.length > 3 && (

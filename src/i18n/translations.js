@@ -49,6 +49,9 @@ export const translations = {
 
     // Language
     language: "Bahasa",
+
+    // Download
+    download: "Unduh",
   },
   en: {
     // Login Page
@@ -98,6 +101,9 @@ export const translations = {
 
     // Language
     language: "Language",
+
+    // Download
+    download: "Download",
   },
 };
 
