@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe } from 'lucide-react';
 import apiService from './services/api';
 import LoginPage from './components/LoginPage';
+import { useLanguage } from './i18n/LanguageContext';
 
 export default function App() {
+  const { t, language, toggleLanguage } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -77,11 +79,11 @@ export default function App() {
       setNotes(formattedNotes);
     } catch (error) {
       console.error('Sync error:', error);
-      setSyncError('Failed to sync');
+      setSyncError(t('syncFailed'));
     } finally {
       setIsSyncing(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, t]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -142,7 +144,7 @@ export default function App() {
       formData.images.length > 0
     ) {
       const noteData = {
-        title: formData.title.trim() || 'Tanpa Judul',
+        title: formData.title.trim() || t('untitled'),
         content: formData.content,
         color: formData.color,
         images: formData.images,
@@ -169,7 +171,7 @@ export default function App() {
         }
       } catch (error) {
         console.error('Save error:', error);
-        setSyncError('Failed to save');
+        setSyncError(t('saveFailed'));
       } finally {
         setIsSyncing(false);
       }
@@ -195,7 +197,7 @@ export default function App() {
       setNotes(notes.filter((note) => note.id !== id));
     } catch (error) {
       console.error('Delete error:', error);
-      setSyncError('Failed to delete');
+      setSyncError(t('deleteFailed'));
     } finally {
       setIsSyncing(false);
     }
@@ -216,11 +218,11 @@ export default function App() {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes} min ago`;
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString('id-ID', {
+    if (minutes < 1) return t('justNow');
+    if (minutes < 60) return t('minutesAgo', { n: minutes });
+    if (hours < 24) return t('hoursAgo', { n: hours });
+    if (days < 7) return t('daysAgo', { n: days });
+    return date.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -238,7 +240,7 @@ export default function App() {
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw size={32} className="text-purple-500 animate-spin" />
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">{t('loading')}</p>
         </div>
       </div>
     );
@@ -293,7 +295,7 @@ export default function App() {
           <div className="p-4 mb-4">
             <input
               type="text"
-              placeholder="Title"
+              placeholder={t('title')}
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
@@ -303,7 +305,7 @@ export default function App() {
           </div>
 
           <textarea
-            placeholder="Note content..."
+            placeholder={t('noteContent')}
             value={formData.content}
             onChange={(e) =>
               setFormData({ ...formData, content: e.target.value })
@@ -324,7 +326,7 @@ export default function App() {
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
-              <span className="text-gray-700 font-medium">Add Images</span>
+              <span className="text-gray-700 font-medium">{t('addImages')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -407,11 +409,18 @@ export default function App() {
                       <p className="text-sm text-gray-500 truncate">{user?.email}</p>
                     </div>
                     <button
+                      onClick={toggleLanguage}
+                      className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                    >
+                      <Globe size={18} />
+                      <span>{t('language')}: {language.toUpperCase()}</span>
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
                     >
                       <LogOut size={18} />
-                      <span>Sign Out</span>
+                      <span>{t('signOut')}</span>
                     </button>
                   </div>
                 </>
@@ -433,7 +442,7 @@ export default function App() {
           />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t('search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border-none outline-none text-gray-700 shadow-sm text-lg"
@@ -445,14 +454,12 @@ export default function App() {
         <div className="space-y-4 h-fit flex items-center justify-start flex-col">
           {filteredNotes.length === 0 && !searchQuery ? (
             <div className="text-center py-20 text-gray-400 h-full flex items-center flex-col justify-center">
-              <p className="text-lg mb-2">No notes yet</p>
-              <p className="text-sm">
-                Tap the + button to create your first note
-              </p>
+              <p className="text-lg mb-2">{t('noNotesYet')}</p>
+              <p className="text-sm">{t('noNotesYetDesc')}</p>
             </div>
           ) : filteredNotes.length === 0 ? (
             <div className="text-center py-20 text-gray-400 h-full flex items-center flex-col justify-center">
-              <p className="text-lg">No notes found</p>
+              <p className="text-lg">{t('noNotesFound')}</p>
             </div>
           ) : (
             filteredNotes.map((note) => (
@@ -513,7 +520,7 @@ export default function App() {
         className="fixed bottom-6 right-6 bg-gray-800 text-white rounded-full px-6 py-4 shadow-lg hover:bg-gray-900 transition-colors flex items-center gap-2"
       >
         <Plus size={24} />
-        <span className="font-medium">New Note</span>
+        <span className="font-medium">{t('newNote')}</span>
       </button>
 
       {deleteConfirm && (
@@ -523,24 +530,23 @@ export default function App() {
               <Trash2 size={28} className="text-red-500" />
             </div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-2 text-center">
-              Delete Note
+              {t('deleteNote')}
             </h3>
             <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to delete this note? This action cannot be
-              undone.
+              {t('deleteConfirmation')}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
                 className="flex-1 py-3 px-4 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>
