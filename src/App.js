@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe, Download, Pin, Archive, RotateCcw, Moon, Sun, SortAsc } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe, Download, Pin, Archive, RotateCcw, Moon, Sun, SortAsc, Users, Settings } from 'lucide-react';
 import apiService from './services/api';
 import LoginPage from './components/LoginPage';
+import ProfilePage from './components/ProfilePage';
+import FriendsPage, { FriendProfilePage } from './components/FriendsPage';
 import { useLanguage } from './i18n/LanguageContext';
 
 export default function App() {
@@ -29,6 +31,9 @@ export default function App() {
   const [currentView, setCurrentView] = useState('notes');
   const [sortBy, setSortBy] = useState('date');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
+  const [viewingFriendId, setViewingFriendId] = useState(null);
 
   const colors = [
     '#FFFFFF',
@@ -121,6 +126,12 @@ export default function App() {
       const data = await apiService.register(formData.name, formData.email, formData.password);
       setUser(data.user);
     }
+    setIsAuthenticated(true);
+  };
+
+  const handleGoogleLogin = async (credential) => {
+    const data = await apiService.googleLogin(credential);
+    setUser(data.user);
     setIsAuthenticated(true);
   };
 
@@ -356,30 +367,76 @@ export default function App() {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} darkMode={darkMode} />;
+    return <LoginPage onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} darkMode={darkMode} />;
+  }
+
+  if (showProfile) {
+    return (
+      <ProfilePage
+        user={user}
+        onBack={() => setShowProfile(false)}
+        onUpdate={(updatedUser) => setUser(updatedUser)}
+        darkMode={darkMode}
+      />
+    );
+  }
+
+  if (viewingFriendId) {
+    return (
+      <FriendProfilePage
+        userId={viewingFriendId}
+        onBack={() => setViewingFriendId(null)}
+        darkMode={darkMode}
+      />
+    );
+  }
+
+  if (showFriends) {
+    return (
+      <FriendsPage
+        onBack={() => setShowFriends(false)}
+        darkMode={darkMode}
+        onViewProfile={(userId) => {
+          setShowFriends(false);
+          setViewingFriendId(userId);
+        }}
+      />
+    );
   }
 
   if (isAdding) {
+    const editorBgColor = darkMode ? '#1f2937' : formData.color;
+    const editorTextColor = darkMode ? 'text-gray-100' : 'text-gray-800';
+    const editorTextMuted = darkMode ? 'text-gray-400' : 'text-gray-500';
+    const editorIconColor = darkMode ? 'text-gray-300' : 'text-gray-700';
+    const editorBorderColor = darkMode ? 'border-gray-600' : 'border-gray-400';
+    
     return (
       <div
         className="w-full [min-w-400px] h-screen overflow-hidden flex flex-col"
-        style={{ backgroundColor: formData.color }}
+        style={{ backgroundColor: editorBgColor }}
       >
+        {darkMode && (
+          <div 
+            className="absolute top-0 left-0 right-0 h-2 opacity-80"
+            style={{ backgroundColor: formData.color }}
+          />
+        )}
         <div className="bg-transparent flex-shrink-0">
           <div className="flex items-center justify-between p-4">
             <button onClick={handleCancel} className="p-2">
-              <ArrowLeft size={24} className="text-gray-700" />
+              <ArrowLeft size={24} className={editorIconColor} />
             </button>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setFormData({ ...formData, isPinned: !formData.isPinned })}
                 className={`p-2 rounded-full ${formData.isPinned ? 'bg-yellow-400' : ''}`}
               >
-                <Pin size={20} className={formData.isPinned ? 'text-white' : 'text-gray-700'} />
+                <Pin size={20} className={formData.isPinned ? 'text-white' : editorIconColor} />
               </button>
-              {isSyncing && <RefreshCw size={20} className="text-gray-500 animate-spin" />}
+              {isSyncing && <RefreshCw size={20} className={editorTextMuted + ' animate-spin'} />}
               <button onClick={handleSave} className="p-2" disabled={isSyncing}>
-                <Check size={24} className="text-gray-700" />
+                <Check size={24} className={editorIconColor} />
               </button>
             </div>
           </div>
@@ -392,7 +449,7 @@ export default function App() {
                 key={color}
                 onClick={() => setFormData({ ...formData, color })}
                 className={`w-10 h-10 rounded-full border-2 flex-shrink-0 ${
-                  formData.color === color ? 'border-gray-700' : 'border-transparent'
+                  formData.color === color ? (darkMode ? 'border-white' : 'border-gray-700') : 'border-transparent'
                 }`}
                 style={{ backgroundColor: color }}
               >
@@ -411,7 +468,7 @@ export default function App() {
               placeholder={t('title')}
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-gray-800 placeholder-gray-500"
+              className={`w-full text-2xl font-semibold bg-transparent border-none outline-none ${editorTextColor} placeholder-${darkMode ? 'gray-500' : 'gray-500'}`}
             />
           </div>
 
@@ -419,18 +476,18 @@ export default function App() {
             placeholder={t('noteContent')}
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="w-full p-4 bg-transparent border-none outline-none text-gray-700 placeholder-gray-400 resize-none mb-4 text-lg"
+            className={`w-full p-4 bg-transparent border-none outline-none ${darkMode ? 'text-gray-200 placeholder-gray-500' : 'text-gray-700 placeholder-gray-400'} resize-none mb-4 text-lg`}
             rows="8"
           />
 
           <div className="mb-4">
-            <label className="flex items-center gap-2 bg-transparent rounded-xl p-3 cursor-pointer hover:bg-white hover:bg-opacity-30 transition-all border-2 border-dashed border-gray-400 justify-center">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <label className={`flex items-center gap-2 bg-transparent rounded-xl p-3 cursor-pointer hover:bg-white hover:bg-opacity-10 transition-all border-2 border-dashed ${editorBorderColor} justify-center`}>
+              <svg className={`w-5 h-5 ${editorIconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
-              <span className="text-gray-700 font-medium">{t('addImages')}</span>
+              <span className={`${editorIconColor} font-medium`}>{t('addImages')}</span>
               <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
             </label>
           </div>
@@ -439,7 +496,7 @@ export default function App() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               {formData.images.map((image) => (
                 <div key={image.id} className="relative group">
-                  <img src={image.url} alt="attachment" className="w-full h-32 object-cover rounded-lg border-2 border-gray-300" />
+                  <img src={image.url} alt="attachment" className={`w-full h-32 object-cover rounded-lg border-2 ${darkMode ? 'border-gray-600' : 'border-gray-300'}`} />
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => downloadImage(image.url, `image-${image.id}`)} className="bg-blue-500 text-white rounded-full p-1">
                       <Download size={16} />
@@ -495,6 +552,15 @@ export default function App() {
                       <p className={`font-medium ${textColor}`}>{user?.name}</p>
                       <p className={`text-sm ${textMuted} truncate`}>{user?.email}</p>
                     </div>
+                    <button onClick={() => { setShowProfile(true); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
+                      <Settings size={18} />
+                      <span>{t('editProfile')}</span>
+                    </button>
+                    <button onClick={() => { setShowFriends(true); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
+                      <Users size={18} />
+                      <span>{t('friends')}</span>
+                    </button>
+                    <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`} />
                     <button onClick={() => { setCurrentView('notes'); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
                       <Cloud size={18} />
                       <span>{t('allNotes')}</span>
@@ -595,7 +661,7 @@ export default function App() {
                 key={note.id}
                 onClick={() => handleEdit(note)}
                 className={`rounded-2xl p-5 shadow-sm ${currentView !== 'trash' ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow relative w-full`}
-                style={{ backgroundColor: darkMode ? '#374151' : note.color }}
+                style={{ backgroundColor: note.color }}
               >
                 {note.isPinned && (
                   <div className="absolute top-2 left-2 bg-yellow-400 rounded-full p-1">
@@ -603,25 +669,25 @@ export default function App() {
                   </div>
                 )}
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className={`text-xl font-semibold ${textColor} flex-1 pr-2 ${note.isPinned ? 'ml-6' : ''}`}>
+                  <h3 className={`text-xl font-semibold text-gray-900 flex-1 pr-2 ${note.isPinned ? 'ml-6' : ''}`}>
                     {note.title}
                   </h3>
                   <div className="flex gap-1">
                     {currentView === 'trash' ? (
                       <>
-                        <button onClick={(e) => { e.stopPropagation(); handleRestore(note.id); }} className="p-1 text-green-500 hover:text-green-600">
+                        <button onClick={(e) => { e.stopPropagation(); handleRestore(note.id); }} className="p-1 text-green-600 hover:text-green-700">
                           <RotateCcw size={20} />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: note.id, permanent: true }); }} className="p-1 text-red-400 hover:text-red-600">
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: note.id, permanent: true }); }} className="p-1 text-red-500 hover:text-red-600">
                           <Trash2 size={20} />
                         </button>
                       </>
                     ) : (
                       <>
-                        <button onClick={(e) => handleTogglePin(note, e)} className={`p-1 ${note.isPinned ? 'text-yellow-500' : textMuted} hover:text-yellow-500`}>
+                        <button onClick={(e) => handleTogglePin(note, e)} className={`p-1 ${note.isPinned ? 'text-yellow-600' : 'text-gray-500'} hover:text-yellow-600`}>
                           <Pin size={20} />
                         </button>
-                        <button onClick={(e) => handleToggleArchive(note, e)} className={`p-1 ${textMuted} hover:text-blue-500`}>
+                        <button onClick={(e) => handleToggleArchive(note, e)} className="p-1 text-gray-500 hover:text-blue-600">
                           <Archive size={20} />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: note.id, permanent: false }); }} className="p-1 text-red-400 hover:text-red-600">
@@ -651,10 +717,10 @@ export default function App() {
                     )}
                   </div>
                 )}
-                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3 line-clamp-2 text-lg`}>
+                <p className="text-gray-700 mb-3 line-clamp-2 text-lg">
                   {note.content}
                 </p>
-                <div className={`flex items-center text-xs ${textMuted}`}>
+                <div className="flex items-center text-xs text-gray-500">
                   <Clock size={14} className="mr-1" />
                   {formatDate(note.date)}
                 </div>

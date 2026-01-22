@@ -11,6 +11,8 @@ export const translations = {
     loggingIn: "Masuk...",
     registering: "Mendaftar...",
     tagline: "Catat dari mana saja",
+    orContinueWith: "atau lanjutkan dengan",
+    continueWithGoogle: "Lanjutkan dengan Google",
 
     // Notes Page
     search: "Cari...",
@@ -34,6 +36,10 @@ export const translations = {
 
     // User Menu
     signOut: "Keluar",
+    profile: "Profil",
+    editProfile: "Edit Profil",
+    friends: "Teman",
+    friendRequests: "Permintaan Pertemanan",
 
     // Status
     loading: "Memuat...",
@@ -76,6 +82,36 @@ export const translations = {
     lightMode: "Mode Terang",
     moveToTrash: "Pindahkan ke Sampah",
     restoreFailed: "Gagal memulihkan",
+
+    // Profile
+    bio: "Bio",
+    bioPlaceholder: "Tulis sesuatu tentangmu...",
+    privateProfile: "Profil Privat",
+    privateProfileDesc: "Hanya teman yang bisa melihat catatanmu",
+    saveChanges: "Simpan Perubahan",
+    saving: "Menyimpan...",
+
+    // Friends
+    searchUsers: "Cari pengguna...",
+    addFriend: "Tambah Teman",
+    sendRequest: "Kirim Permintaan",
+    requestSent: "Permintaan Terkirim",
+    accept: "Terima",
+    decline: "Tolak",
+    removeFriend: "Hapus Teman",
+    noFriends: "Belum ada teman",
+    noFriendRequests: "Tidak ada permintaan pertemanan",
+    viewProfile: "Lihat Profil",
+    friendsNotes: "Catatan Teman",
+    like: "Suka",
+    unlike: "Batal Suka",
+    likes: "suka",
+    duplicate: "Duplikat",
+    duplicated: "Catatan berhasil diduplikasi",
+    publicNote: "Catatan Publik",
+    privateNote: "Catatan Privat",
+    hideNotes: "Sembunyikan Catatan",
+    showNotes: "Tampilkan Catatan",
   },
   en: {
     // Login Page
@@ -87,6 +123,8 @@ export const translations = {
     loggingIn: "Signing in...",
     registering: "Signing up...",
     tagline: "Notes from anywhere",
+    orContinueWith: "or continue with",
+    continueWithGoogle: "Continue with Google",
 
     // Notes Page
     search: "Search...",
@@ -110,6 +148,10 @@ export const translations = {
 
     // User Menu
     signOut: "Sign Out",
+    profile: "Profile",
+    editProfile: "Edit Profile",
+    friends: "Friends",
+    friendRequests: "Friend Requests",
 
     // Status
     loading: "Loading...",
@@ -152,6 +194,36 @@ export const translations = {
     lightMode: "Light Mode",
     moveToTrash: "Move to Trash",
     restoreFailed: "Failed to restore",
+
+    // Profile
+    bio: "Bio",
+    bioPlaceholder: "Write something about yourself...",
+    privateProfile: "Private Profile",
+    privateProfileDesc: "Only friends can see your notes",
+    saveChanges: "Save Changes",
+    saving: "Saving...",
+
+    // Friends
+    searchUsers: "Search users...",
+    addFriend: "Add Friend",
+    sendRequest: "Send Request",
+    requestSent: "Request Sent",
+    accept: "Accept",
+    decline: "Decline",
+    removeFriend: "Remove Friend",
+    noFriends: "No friends yet",
+    noFriendRequests: "No friend requests",
+    viewProfile: "View Profile",
+    friendsNotes: "Friend's Notes",
+    like: "Like",
+    unlike: "Unlike",
+    likes: "likes",
+    duplicate: "Duplicate",
+    duplicated: "Note duplicated successfully",
+    publicNote: "Public Note",
+    privateNote: "Private Note",
+    hideNotes: "Hide Notes",
+    showNotes: "Show Notes",
   },
 };
 

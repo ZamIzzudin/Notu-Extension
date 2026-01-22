@@ -113,6 +113,17 @@ class ApiService {
     return data;
   }
 
+  async googleLogin(credential) {
+    const data = await this.request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    }, false);
+    
+    setTokens(data.accessToken, data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    return data;
+  }
+
   async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
@@ -127,6 +138,15 @@ class ApiService {
     return this.request('/auth/me');
   }
 
+  async updateProfile(profileData) {
+    const data = await this.request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+    localStorage.setItem('user', JSON.stringify(data.user));
+    return data;
+  }
+
   isAuthenticated() {
     const { accessToken } = getTokens();
     return !!accessToken;
@@ -135,6 +155,39 @@ class ApiService {
   getUser() {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
+  }
+
+  // Friends
+  async searchUsers(query) {
+    return this.request(`/auth/users/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async getFriends() {
+    return this.request('/auth/friends');
+  }
+
+  async getFriendRequests() {
+    return this.request('/auth/friends/requests');
+  }
+
+  async sendFriendRequest(userId) {
+    return this.request(`/auth/friends/request/${userId}`, { method: 'POST' });
+  }
+
+  async acceptFriendRequest(userId) {
+    return this.request(`/auth/friends/accept/${userId}`, { method: 'POST' });
+  }
+
+  async declineFriendRequest(userId) {
+    return this.request(`/auth/friends/decline/${userId}`, { method: 'POST' });
+  }
+
+  async removeFriend(userId) {
+    return this.request(`/auth/friends/${userId}`, { method: 'DELETE' });
+  }
+
+  async getUserProfile(userId) {
+    return this.request(`/auth/users/${userId}`);
   }
 
   // Notes
@@ -148,6 +201,10 @@ class ApiService {
 
   async getNote(id) {
     return this.request(`/notes/${id}`);
+  }
+
+  async getUserNotes(userId) {
+    return this.request(`/notes/user/${userId}`);
   }
 
   async createNote(noteData) {
@@ -180,6 +237,21 @@ class ApiService {
   async emptyTrash() {
     return this.request('/notes/trash/empty', {
       method: 'DELETE',
+    });
+  }
+
+  async likeNote(id) {
+    return this.request(`/notes/${id}/like`, { method: 'POST' });
+  }
+
+  async duplicateNote(id) {
+    return this.request(`/notes/${id}/duplicate`, { method: 'POST' });
+  }
+
+  async updateNoteVisibility(id, isPublic) {
+    return this.request(`/notes/${id}/visibility`, {
+      method: 'PUT',
+      body: JSON.stringify({ isPublic }),
     });
   }
 
