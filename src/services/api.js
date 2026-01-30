@@ -113,17 +113,6 @@ class ApiService {
     return data;
   }
 
-  async googleLogin(credential) {
-    const data = await this.request('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ credential }),
-    }, false);
-    
-    setTokens(data.accessToken, data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    return data;
-  }
-
   async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
@@ -204,7 +193,7 @@ class ApiService {
   }
 
   async getUserNotes(userId) {
-    return this.request(`/notes/user/${userId}`);
+    return this.request(`/notes/user/${userId}?published=true`);
   }
 
   async createNote(noteData) {

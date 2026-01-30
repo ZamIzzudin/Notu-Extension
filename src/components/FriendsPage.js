@@ -163,12 +163,14 @@ export default function FriendsPage({ onBack, darkMode, onViewProfile }) {
                 <button
                   onClick={() => handleAcceptRequest(user.id)}
                   className="p-2 bg-green-500 text-white rounded-lg"
+                  title={t("accept")}
                 >
                   <Check size={16} />
                 </button>
                 <button
                   onClick={() => handleDeclineRequest(user.id)}
                   className="p-2 bg-red-500 text-white rounded-lg"
+                  title={t("decline")}
                 >
                   <X size={16} />
                 </button>
@@ -176,7 +178,8 @@ export default function FriendsPage({ onBack, darkMode, onViewProfile }) {
             ) : (
               <button
                 onClick={() => handleSendRequest(user.id)}
-                className="p-2 bg-blue-500 text-white rounded-lg flex items-center gap-1"
+                className="p-2 bg-blue-500 text-white rounded-lg"
+                title={t("sendRequest")}
               >
                 <UserPlus size={16} />
               </button>
@@ -188,13 +191,23 @@ export default function FriendsPage({ onBack, darkMode, onViewProfile }) {
           <>
             <button
               onClick={() => onViewProfile && onViewProfile(user._id)}
-              className="p-2 bg-blue-500 text-white rounded-lg text-sm"
+              className={`p-2 rounded-lg ${
+                darkMode
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+              title={t("viewProfile")}
             >
-              {t("viewProfile")}
+              <User size={18} />
             </button>
             <button
               onClick={() => handleRemoveFriend(user._id)}
-              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              className={`p-2 rounded-lg ${
+                darkMode
+                  ? 'text-red-400 hover:bg-gray-700'
+                  : 'text-red-500 hover:bg-red-50'
+              }`}
+              title={t("removeFriend")}
             >
               <UserX size={18} />
             </button>
@@ -206,12 +219,14 @@ export default function FriendsPage({ onBack, darkMode, onViewProfile }) {
             <button
               onClick={() => handleAcceptRequest(user._id)}
               className="p-2 bg-green-500 text-white rounded-lg"
+              title={t("accept")}
             >
               <Check size={16} />
             </button>
             <button
               onClick={() => handleDeclineRequest(user._id)}
               className="p-2 bg-red-500 text-white rounded-lg"
+              title={t("decline")}
             >
               <X size={16} />
             </button>

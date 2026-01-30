@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe, Download, Pin, Archive, RotateCcw, Moon, Sun, SortAsc, Users, Settings } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, ArrowLeft, Check, X, RefreshCw, Cloud, LogOut, User, Globe, Download, Pin, Eye, EyeOff, RotateCcw, Moon, Sun, SortAsc, Users, Settings } from 'lucide-react';
 import apiService from './services/api';
 import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
@@ -88,9 +88,8 @@ export default function App() {
     setSyncError(null);
     try {
       const filter = {};
-      if (view === 'archived') filter.archived = true;
       if (view === 'trash') filter.deleted = true;
-      
+
       const serverNotes = await apiService.getNotes(filter);
       const formattedNotes = serverNotes.map(note => ({
         id: note._id,
@@ -100,8 +99,8 @@ export default function App() {
         images: note.images || [],
         date: note.date,
         isPinned: note.isPinned || false,
-        isArchived: note.isArchived || false,
         isDeleted: note.isDeleted || false,
+        isPublished: note.isPublished || false,
       }));
       setNotes(formattedNotes);
     } catch (error) {
@@ -126,12 +125,6 @@ export default function App() {
       const data = await apiService.register(formData.name, formData.email, formData.password);
       setUser(data.user);
     }
-    setIsAuthenticated(true);
-  };
-
-  const handleGoogleLogin = async (credential) => {
-    const data = await apiService.googleLogin(credential);
-    setUser(data.user);
     setIsAuthenticated(true);
   };
 
@@ -287,14 +280,14 @@ export default function App() {
     }
   };
 
-  const handleToggleArchive = async (note, e) => {
+  const handleTogglePublish = async (note, e) => {
     e.stopPropagation();
     setIsSyncing(true);
     try {
-      await apiService.updateNote(note.id, { ...note, isArchived: !note.isArchived });
-      setNotes(notes.filter((n) => n.id !== note.id));
+      await apiService.updateNote(note.id, { ...note, isPublished: !note.isPublished });
+      setNotes(notes.map((n) => n.id === note.id ? { ...n, isPublished: !note.isPublished } : n));
     } catch (error) {
-      console.error('Archive error:', error);
+      console.error('Publish error:', error);
       setSyncError(t('saveFailed'));
     } finally {
       setIsSyncing(false);
@@ -367,7 +360,7 @@ export default function App() {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} darkMode={darkMode} />;
+    return <LoginPage onLogin={handleLogin} darkMode={darkMode} />;
   }
 
   if (showProfile) {
@@ -515,7 +508,6 @@ export default function App() {
   }
 
   const getEmptyMessage = () => {
-    if (currentView === 'archived') return t('noArchivedNotes');
     if (currentView === 'trash') return t('noTrashedNotes');
     return t('noNotesYet');
   };
@@ -525,7 +517,7 @@ export default function App() {
       <div className="flex-shrink-0 p-6 pb-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className={`text-4xl font-bold ${textColor}`}>
-            {currentView === 'notes' ? 'Notu' : currentView === 'archived' ? t('archived') : t('trash')}
+            {currentView === 'notes' ? 'Notu' : t('trash')}
           </h1>
           <div className="flex items-center gap-3">
             {isSyncing ? (
@@ -539,9 +531,13 @@ export default function App() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className={`w-9 h-9 ${darkMode ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} rounded-full flex items-center justify-center font-medium text-sm shadow-md`}
+                className={`w-9 h-9 ${darkMode ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} rounded-full flex items-center justify-center font-medium text-sm shadow-md overflow-hidden`}
               >
-                {user?.name?.charAt(0).toUpperCase() || <User size={18} />}
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.charAt(0).toUpperCase() || <User size={18} />
+                )}
               </button>
               
               {showUserMenu && (
@@ -564,10 +560,6 @@ export default function App() {
                     <button onClick={() => { setCurrentView('notes'); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
                       <Cloud size={18} />
                       <span>{t('allNotes')}</span>
-                    </button>
-                    <button onClick={() => { setCurrentView('archived'); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
-                      <Archive size={18} />
-                      <span>{t('archived')}</span>
                     </button>
                     <button onClick={() => { setCurrentView('trash'); setShowUserMenu(false); }} className={`w-full px-4 py-3 text-left ${textColor} hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
                       <Trash2 size={18} />
@@ -687,8 +679,8 @@ export default function App() {
                         <button onClick={(e) => handleTogglePin(note, e)} className={`p-1 ${note.isPinned ? 'text-yellow-600' : 'text-gray-500'} hover:text-yellow-600`}>
                           <Pin size={20} />
                         </button>
-                        <button onClick={(e) => handleToggleArchive(note, e)} className="p-1 text-gray-500 hover:text-blue-600">
-                          <Archive size={20} />
+                        <button onClick={(e) => handleTogglePublish(note, e)} className={`p-1 ${note.isPublished ? 'text-green-500' : 'text-gray-500'} hover:text-green-600`} title={note.isPublished ? t('unpublish') : t('publish')}>
+                          {note.isPublished ? <Eye size={20} /> : <EyeOff size={20} />}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: note.id, permanent: false }); }} className="p-1 text-red-400 hover:text-red-600">
                           <Trash2 size={20} />

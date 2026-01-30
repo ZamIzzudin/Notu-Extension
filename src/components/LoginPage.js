@@ -1,54 +1,18 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { Eye, EyeOff, Loader2, Globe } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext";
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-
-export default function LoginPage({ onLogin, onGoogleLogin }) {
+export default function LoginPage({ onLogin }) {
   const { t, language, toggleLanguage } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
-
-  const handleGoogleCallback = useCallback(async (response) => {
-    if (response.credential && onGoogleLogin) {
-      setIsGoogleLoading(true);
-      setError("");
-      try {
-        await onGoogleLogin(response.credential);
-      } catch (err) {
-        setError(err.message || "Google login failed");
-      } finally {
-        setIsGoogleLoading(false);
-      }
-    }
-  }, [onGoogleLogin]);
-
-  useEffect(() => {
-    if (GOOGLE_CLIENT_ID && window.google) {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-      });
-      
-      window.google.accounts.id.renderButton(
-        document.getElementById("google-signin-button"),
-        { 
-          theme: "outline", 
-          size: "large", 
-          width: "100%",
-          text: "continue_with",
-        }
-      );
-    }
-  }, [handleGoogleCallback]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -131,26 +95,6 @@ export default function LoginPage({ onLogin, onGoogleLogin }) {
             <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl mb-4 text-sm">
               {error}
             </div>
-          )}
-
-          {GOOGLE_CLIENT_ID && (
-            <>
-              <div 
-                id="google-signin-button" 
-                className={`w-full mb-4 ${isGoogleLoading ? 'opacity-50 pointer-events-none' : ''}`}
-              />
-              
-              <div className="relative mb-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">
-                    {t('orContinueWith')}
-                  </span>
-                </div>
-              </div>
-            </>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, User, Loader2, Lock, Unlock } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { ArrowLeft, User, Loader2, Lock, Unlock, Camera } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext";
 import apiService from "../services/api";
 
 export default function ProfilePage({ user, onBack, onUpdate, darkMode }) {
   const { t } = useLanguage();
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     bio: user?.bio || "",
     isPrivate: user?.isPrivate || false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -23,6 +25,46 @@ export default function ProfilePage({ user, onBack, onUpdate, darkMode }) {
       });
     }
   }, [user]);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Photo size must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setError("");
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64 = reader.result;
+          const data = await apiService.updateProfile({ avatar: base64 });
+          
+          // Update user with the new avatar URL from Cloudinary
+          if (data.user && data.user.avatar) {
+            onUpdate(data.user);
+            setSuccess(t("saveChanges") + " ✓");
+            setTimeout(() => setSuccess(""), 3000);
+          } else {
+            setError("Failed to get avatar URL from server");
+          }
+        } catch (err) {
+          setError(err.message || "Failed to upload photo");
+        } finally {
+          setIsUploadingAvatar(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setError(err.message || "Failed to upload photo");
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,27 +101,45 @@ export default function ProfilePage({ user, onBack, onUpdate, darkMode }) {
 
       <div className={`${cardBg} rounded-2xl p-6 shadow-sm`}>
         <div className="flex flex-col items-center mb-6">
-          <div
-            className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold ${
-              darkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              user?.name?.charAt(0).toUpperCase() || <User size={40} />
-            )}
+          <div className="relative">
+            <div
+              className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold ${
+                darkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                user?.name?.charAt(0).toUpperCase() || <User size={40} />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              className={`absolute bottom-0 right-0 p-2 rounded-full ${
+                darkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
+              } transition-colors ${isUploadingAvatar ? "opacity-50" : ""}`}
+            >
+              {isUploadingAvatar ? (
+                <Loader2 size={16} className={textColor} />
+              ) : (
+                <Camera size={16} className={textColor} />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
           <p className={`mt-3 ${textMuted}`}>{user?.email}</p>
-          {user?.authProvider === "google" && (
-            <span className="mt-1 text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
-              Google Account
-            </span>
-          )}
         </div>
 
         {error && (
